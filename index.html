@@ -1,23 +1,32 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>TVALUE Login Widget</title>
+    <title>TVALUE Access</title>
     <meta charset="UTF-8" />
     <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        width: 100%;
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background-color: #f0f2f5;
+        font-family: sans-serif;
       }
-      iframe {
-        width: 100%;
-        height: 100%;
+      button {
+        padding: 1rem 2rem;
+        font-size: 1.2rem;
+        cursor: pointer;
         border: none;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        background-color: #0072c6;
+        color: white;
       }
     </style>
   </head>
   <body>
-    <iframe src="https://www.tvalueonline.com/Account/Login" allowfullscreen></iframe>
+    <button onclick="window.open('https://www.tvalueonline.com/Account/Login', '_blank')">
+      🔓 Acceder a TVALUE
+    </button>
   </body>
 </html>
