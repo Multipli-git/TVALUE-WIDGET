@@ -1,32 +1,142 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>TVALUE Access</title>
-    <meta charset="UTF-8" />
-    <style>
-      body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        background-color: #f0f2f5;
-        font-family: sans-serif;
+<head>
+  <title>TVALUE Widget</title>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    label, input, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    button {
+      background: #0072c6;
+      color: #fff;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #005a9e;
+    }
+    .response-box {
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: monospace;
+      max-height: 300px;
+      overflow: auto;
+    }
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="widget-content">
+    <h2>TVALUE Commission Calc</h2>
+    <label for="rate">Enter Rate (%)</label>
+    <input type="number" id="rate" placeholder="Enter rate manually" step="0.01" />
+    <button onclick="calculateTvalue()">Calculate</button>
+
+    <div class="controls">
+      <button onclick="copyResult()">Copy</button>
+      <button onclick="downloadScreenshot()">Capture</button>
+    </div>
+
+    <div id="result" class="response-box"></div>
+  </div>
+
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script>
+    async function calculateTvalue() {
+      const rate = parseFloat(document.getElementById("rate").value);
+      if (!rate) {
+        alert("Please enter a valid rate.");
+        return;
       }
-      button {
-        padding: 1rem 2rem;
-        font-size: 1.2rem;
-        cursor: pointer;
-        border: none;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        background-color: #0072c6;
-        color: white;
-      }
-    </style>
-  </head>
-  <body>
-    <button onclick="window.open('https://www.tvalueonline.com/Account/Login', '_blank')">
-      🔓 Acceder a TVALUE
-    </button>
-  </body>
+
+      const payload = {
+        CustomerId: "6774400739051474671",
+        CreateAmSchedule: false,
+        RoundingType: "SpecificLine",
+        SpecificLine: 3,
+        LineAdjustment: "LastAmount",
+        Document: {
+          CFM: [
+            {
+              Amount: 1000000,
+              Event: "Loan",
+              Number: 1,
+              StartDate: "2024-01-01"
+            },
+            {
+              Amount: "Unknown",
+              Event: "Loan",
+              Number: 1,
+              StartDate: "2024-01-01"
+            },
+            {
+              Amount: 20000,
+              Event: "Payment",
+              Number: 60,
+              Period: "Monthly",
+              StartDate: "2024-02-01"
+            }
+          ],
+          Label: "Zoho TValue Commission Only",
+          Period: "Monthly",
+          Rate: rate / 100,
+          Schema: 6,
+          YearLength: 365
+        }
+      };
+
+      const response = await fetch("https://tvaluerestws.com/WebApi/calculate/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+    }
+
+    function copyResult() {
+      const text = document.getElementById("result").textContent;
+      navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
+    }
+
+    function downloadScreenshot() {
+      html2canvas(document.getElementById("widget-content")).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "tvalue_result.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    }
+  </script>
+</body>
 </html>
