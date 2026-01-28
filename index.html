@@ -3,6 +3,8 @@
 <head>
   <title>TVALUE Widget</title>
   <meta charset="UTF-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -49,22 +51,36 @@
     .controls {
       display: flex;
       justify-content: space-between;
-    }
-    .response-box {
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      padding: 20px;
-      border-radius: 12px;
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-family: SFMono-Regular, Consolas, monospace;
-      max-height: 400px;
-      overflow: auto;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     h2 {
       text-align: center;
       margin-bottom: 30px;
       color: #333;
+    }
+    .parsed-output {
+      margin-top: 20px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .parsed-output span {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .parsed-output h3 {
+      margin-bottom: 10px;
+      color: #555;
+    }
+    .cashflow-item {
+      background: #f8f8f8;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
     }
   </style>
 </head>
@@ -88,14 +104,13 @@
 
     <div class="controls">
       <button onclick="calculateTvalue()">Calculate</button>
-      <button onclick="copyResult()">Copy</button>
-      <button onclick="downloadScreenshot()">Capture</button>
+      <button onclick="downloadScreenshot()">Capture PNG</button>
+      <button onclick="downloadPDF()">Export PDF</button>
     </div>
 
-    <div id="result" class="response-box"></div>
+    <div id="parsed" class="parsed-output"></div>
   </div>
 
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <script>
     async function calculateTvalue() {
       const lease = parseFloat(document.getElementById("lease").value);
@@ -154,12 +169,32 @@
       });
 
       const data = await response.json();
-      document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+      renderParsedOutput(data);
     }
 
-    function copyResult() {
-      const text = document.getElementById("result").textContent;
-      navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
+    function renderParsedOutput(data) {
+      const output = document.getElementById("parsed");
+      if (!data || !data.CFM) {
+        output.innerHTML = "<i>No structured data to display</i>";
+        return;
+      }
+
+      const unknown = data.CFM.Unknowns ? data.CFM.Unknowns.Value / 100 : null;
+      const rate = data.CFM.Rate * 100;
+
+      let html = `<h3>TVALUE Results</h3>`;
+      html += `<span><strong>📈 Rate:</strong> ${rate.toFixed(2)}%</span>`;
+      if (unknown !== null) {
+        html += `<span><strong>💰 Commission:</strong> $${unknown.toFixed(2)}</span>`;
+      }
+
+      html += `<h3>📋 Cash Flow Schedule</h3>`;
+      data.CFM.CFM.forEach((entry, i) => {
+        const dollars = (entry.Amount / 100).toFixed(2);
+        html += `<div class="cashflow-item">#${i + 1} → <strong>${entry.Event}</strong>: $${dollars} on ${entry.StartDate}${entry.Period ? ` (${entry.Period})` : ''}</div>`;
+      });
+
+      output.innerHTML = html;
     }
 
     function downloadScreenshot() {
@@ -168,6 +203,18 @@
         link.download = "tvalue_result.png";
         link.href = canvas.toDataURL();
         link.click();
+      });
+    }
+
+    function downloadPDF() {
+      html2canvas(document.getElementById("parsed")).then(canvas => {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jspdf.jsPDF();
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save("tvalue_result.pdf");
       });
     }
   </script>
