@@ -1,222 +1,178 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <title>TVALUE Widget</title>
-  <meta charset="UTF-8">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      padding: 40px;
-      background: linear-gradient(135deg, #f0f0f5, #e6e6ed);
-    }
-    .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    label {
-      font-weight: 600;
-      margin-bottom: 5px;
-      display: block;
-    }
-    input {
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      width: 100%;
-      margin-bottom: 20px;
-      box-sizing: border-box;
-    }
-    button {
-      background: #007aff;
-      color: #fff;
-      padding: 12px;
-      font-size: 16px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      margin-bottom: 20px;
-      width: 48%;
-    }
-    button:hover {
-      background: #005fcb;
-    }
-    .controls {
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 30px;
-      color: #333;
-    }
-    .parsed-output {
-      margin-top: 20px;
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      font-size: 15px;
-      line-height: 1.6;
-    }
-    .parsed-output span {
-      display: block;
-      margin-bottom: 8px;
-    }
-    .parsed-output h3 {
-      margin-bottom: 10px;
-      color: #555;
-    }
-    .cashflow-item {
-      background: #f8f8f8;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container" id="widget-content">
-    <h2>TVALUE Commission Calculator</h2>
-    <label for="lease">Funding Amount Gross</label>
-    <input type="number" id="lease" placeholder="10000.00">
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TValue Widget</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+          Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        background-color: #f5f5f7;
+        margin: 0;
+        padding: 2rem;
+      }
+      .container {
+        max-width: 600px;
+        margin: auto;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      label {
+        font-weight: 500;
+        display: block;
+        margin-bottom: 0.5rem;
+      }
+      input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 1rem;
+      }
+      button {
+        background-color: #007aff;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-top: 1rem;
+      }
+      h2 {
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+      }
+      .result-box {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      }
+      .result-box h3 {
+        margin-top: 0;
+      }
+      .card {
+        background: #f1f1f3;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>TValue Widget</h2>
+      <div class="form-group">
+        <label>Funding Amount Gross</label>
+        <input id="funding" type="number" />
+      </div>
+      <div class="form-group">
+        <label>Customer Payment Gross</label>
+        <input id="payment" type="number" />
+      </div>
+      <div class="form-group">
+        <label>Term</label>
+        <input id="term" type="number" />
+      </div>
+      <div class="form-group">
+        <label>Submitted for Payout</label>
+        <input id="startDate" type="date" />
+      </div>
+      <div class="form-group">
+        <label>Rate</label>
+        <input id="rate" type="number" step="0.0001" />
+      </div>
+      <button onclick="calculateTValue()">Calculate</button>
+      <button onclick="exportPDF()">Export PDF</button>
 
-    <label for="payment">Customer Payment Gross</label>
-    <input type="number" id="payment" placeholder="200.00">
-
-    <label for="term">Term (Months)</label>
-    <input type="number" id="term" placeholder="60">
-
-    <label for="startDate">Submitted for Payout (YYYY-MM-DD)</label>
-    <input type="date" id="startDate">
-
-    <label for="rate">Rate (%)</label>
-    <input type="number" id="rate" placeholder="6.50" step="0.01">
-
-    <div class="controls">
-      <button onclick="calculateTvalue()">Calculate</button>
-      <button onclick="downloadScreenshot()">Capture PNG</button>
-      <button onclick="downloadPDF()">Export PDF</button>
+      <div class="result-box" id="parsed" style="display:none">
+        <h3>📊 TValue Results</h3>
+        <p><strong>📈 Rate:</strong> <span id="vRate"></span></p>
+        <p><strong>💰 Commission:</strong> <span id="vCommission"></span></p>
+        <h4>📋 Cash Flow Schedule</h4>
+        <div id="vCashflow"></div>
+      </div>
     </div>
 
-    <div id="parsed" class="parsed-output"></div>
-  </div>
+    <script>
+      async function calculateTValue() {
+        const lease = parseFloat(document.getElementById('funding').value);
+        const payment = parseFloat(document.getElementById('payment').value);
+        const term = parseInt(document.getElementById('term').value);
+        const startDate = document.getElementById('startDate').value;
+        const rate = parseFloat(document.getElementById('rate').value) / 100;
 
-  <script>
-    async function calculateTvalue() {
-      const lease = parseFloat(document.getElementById("lease").value);
-      const payment = parseFloat(document.getElementById("payment").value);
-      const term = parseInt(document.getElementById("term").value);
-      const startDate = document.getElementById("startDate").value;
-      const rate = parseFloat(document.getElementById("rate").value);
+        const leaseCents = Math.round(lease * 100);
+        const paymentCents = Math.round(payment * 100);
 
-      if (!lease || !payment || !term || !startDate || !rate) {
-        alert("Please fill all fields correctly.");
-        return;
+        const cfm = [
+          { Amount: leaseCents, Event: "Loan", Number: 1, StartDate: startDate },
+          { Amount: "Unknown", Event: "Loan", Number: 1, StartDate: startDate },
+          { Amount: paymentCents, Event: "Payment", Number: term - 1, Period: "Monthly", StartDate: startDate },
+          { Amount: paymentCents, Event: "Payment", Number: 1, StartDate: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + term - 1)).toISOString().split('T')[0] }
+        ];
+
+        const payload = {
+          CustomerId: "6774400739051474671",
+          CreateAmSchedule: false,
+          RoundingType: "SpecificLine",
+          SpecificLine: 3,
+          LineAdjustment: "LastAmount",
+          Document: {
+            CFM: cfm,
+            Label: "Zoho TValue Commission Only",
+            Period: "Monthly",
+            Rate: rate,
+            Schema: 6,
+            YearLength: 365
+          }
+        };
+
+        const res = await fetch("https://tvaluerestws.com/WebApi/calculate/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        const commission = (json?.CFM?.Unknowns?.Value / 100).toFixed(2);
+
+        document.getElementById('vRate').innerText = `${(json.CFM.Rate * 100).toFixed(2)}%`;
+        document.getElementById('vCommission').innerText = `$${commission}`;
+
+        let cards = "";
+        json.CFM.CFM.forEach((item, i) => {
+          let text = "";
+          if (i === 0) text = `#1 → Funding Amount Gross: $${(item.Amount / 100).toFixed(2)} on ${item.StartDate}`;
+          else if (i === 1) text = `#2 → Commission: $${(item.Amount / 100).toFixed(2)} on ${item.StartDate}`;
+          else if (i === 2) text = `#3 → Payment: $${(item.Amount / 100).toFixed(2)} on ${item.StartDate} (Monthly)`;
+          else if (i === 3) text = `#4 → Last Payment on: ${item.StartDate}`;
+          cards += `<div class='card'>${text}</div>`;
+        });
+
+        document.getElementById('vCashflow').innerHTML = cards;
+        document.getElementById('parsed').style.display = 'block';
       }
 
-      const payload = {
-        CustomerId: "6774400739051474671",
-        CreateAmSchedule: false,
-        RoundingType: "SpecificLine",
-        SpecificLine: 3,
-        LineAdjustment: "LastAmount",
-        Document: {
-          CFM: [
-            {
-              Amount: Math.round(lease * 100),
-              Event: "Loan",
-              Number: 1,
-              StartDate: startDate
-            },
-            {
-              Amount: "Unknown",
-              Event: "Loan",
-              Number: 1,
-              StartDate: startDate
-            },
-            {
-              Amount: Math.round(payment * 100),
-              Event: "Payment",
-              Number: term,
-              Period: "Monthly",
-              StartDate: startDate
-            }
-          ],
-          Label: "Zoho TValue Commission Only",
-          Period: "Monthly",
-          Rate: rate / 100,
-          Schema: 6,
-          YearLength: 365
-        }
-      };
-
-      const response = await fetch("https://tvaluerestws.com/WebApi/calculate/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-      renderParsedOutput(data);
-    }
-
-    function renderParsedOutput(data) {
-      const output = document.getElementById("parsed");
-      if (!data || !data.CFM) {
-        output.innerHTML = "<i>No structured data to display</i>";
-        return;
+      function exportPDF() {
+        import('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js').then(() => {
+          html2canvas(document.querySelector('#parsed')).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jspdf.jsPDF();
+            pdf.addImage(imgData, 'PNG', 10, 10);
+            pdf.save('tvalue_result.pdf');
+          });
+        });
       }
-
-      const unknown = data.CFM.Unknowns ? data.CFM.Unknowns.Value / 100 : null;
-      const rate = data.CFM.Rate * 100;
-
-      let html = `<h3>TVALUE Results</h3>`;
-      html += `<span><strong>📈 Rate:</strong> ${rate.toFixed(2)}%</span>`;
-      if (unknown !== null) {
-        html += `<span><strong>💰 Commission:</strong> $${unknown.toFixed(2)}</span>`;
-      }
-
-      html += `<h3>📋 Cash Flow Schedule</h3>`;
-      data.CFM.CFM.forEach((entry, i) => {
-        const dollars = (entry.Amount / 100).toFixed(2);
-        html += `<div class="cashflow-item">#${i + 1} → <strong>${entry.Event}</strong>: $${dollars} on ${entry.StartDate}${entry.Period ? ` (${entry.Period})` : ''}</div>`;
-      });
-
-      output.innerHTML = html;
-    }
-
-    function downloadScreenshot() {
-      html2canvas(document.getElementById("widget-content")).then(canvas => {
-        const link = document.createElement("a");
-        link.download = "tvalue_result.png";
-        link.href = canvas.toDataURL();
-        link.click();
-      });
-    }
-
-    function downloadPDF() {
-      html2canvas(document.getElementById("parsed")).then(canvas => {
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jspdf.jsPDF();
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save("tvalue_result.pdf");
-      });
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>
