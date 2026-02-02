@@ -168,10 +168,12 @@
           json?.AmSchedule,
           json?.AMSchedule,
           json?.AmortizationSchedule,
+          json?.Amortization?.AmortizationTable,
           json?.CFM?.AmortizationTable,
           json?.CFM?.AmSchedule,
           json?.CFM?.AMSchedule,
-          json?.CFM?.AmortizationSchedule
+          json?.CFM?.AmortizationSchedule,
+          json?.CFM?.Amortization?.AmortizationTable
         ].find(Boolean);
         const amScheduleEntries = Array.isArray(amScheduleSource)
           ? amScheduleSource
@@ -183,13 +185,18 @@
             [];
         const amCards = Array.isArray(amScheduleEntries) && amScheduleEntries.length
           ? amScheduleEntries.map((item, index) => {
+              const dataAmount = item?.Data?.PaymentAmount != null && item.Data.PaymentAmount !== 0
+                ? item.Data.PaymentAmount
+                : item?.Data?.LoanAmount != null && item.Data.LoanAmount !== 0
+                  ? item.Data.LoanAmount
+                  : item?.Data?.PrincipalPaid != null && item.Data.PrincipalPaid !== 0
+                    ? item.Data.PrincipalPaid
+                    : null;
               const amount = item?.Amount != null
                 ? `$${(item.Amount / 100).toFixed(2)}`
-                : item?.Data?.PaymentAmount != null
-                  ? `$${(item.Data.PaymentAmount / 100).toFixed(2)}`
-                  : item?.Data?.LoanAmount != null
-                    ? `$${(item.Data.LoanAmount / 100).toFixed(2)}`
-                    : "N/A";
+                : dataAmount != null
+                  ? `$${(dataAmount / 100).toFixed(2)}`
+                  : "N/A";
               const date = item?.Date || item?.StartDate || "N/A";
               const label = item?.Label || item?.Event || item?.AmortizationLineType || "Am Schedule Item";
               const balance = item?.Data?.Balance != null
