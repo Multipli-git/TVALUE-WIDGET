@@ -164,9 +164,11 @@
 
         document.getElementById('vCashflow').innerHTML = cards;
         const amScheduleSource = [
+          json?.AmortizationTable,
           json?.AmSchedule,
           json?.AMSchedule,
           json?.AmortizationSchedule,
+          json?.CFM?.AmortizationTable,
           json?.CFM?.AmSchedule,
           json?.CFM?.AMSchedule,
           json?.CFM?.AmortizationSchedule
@@ -177,13 +179,23 @@
             amScheduleSource?.CFM ||
             amScheduleSource?.Items ||
             amScheduleSource?.Lines ||
+            amScheduleSource?.AmortizationTable ||
             [];
         const amCards = Array.isArray(amScheduleEntries) && amScheduleEntries.length
           ? amScheduleEntries.map((item, index) => {
-              const amount = item?.Amount != null ? `$${(item.Amount / 100).toFixed(2)}` : "N/A";
+              const amount = item?.Amount != null
+                ? `$${(item.Amount / 100).toFixed(2)}`
+                : item?.Data?.PaymentAmount != null
+                  ? `$${(item.Data.PaymentAmount / 100).toFixed(2)}`
+                  : item?.Data?.LoanAmount != null
+                    ? `$${(item.Data.LoanAmount / 100).toFixed(2)}`
+                    : "N/A";
               const date = item?.Date || item?.StartDate || "N/A";
-              const label = item?.Label || item?.Event || "Am Schedule Item";
-              return `<div class='card'>#${index + 1} → ${label}: ${amount} on ${date}</div>`;
+              const label = item?.Label || item?.Event || item?.AmortizationLineType || "Am Schedule Item";
+              const balance = item?.Data?.Balance != null
+                ? ` (Balance: $${(item.Data.Balance / 100).toFixed(2)})`
+                : "";
+              return `<div class='card'>#${index + 1} → ${label}: ${amount} on ${date}${balance}</div>`;
             }).join("")
           : "<div class='card'>No Am Schedule data available.</div>";
         document.getElementById('vAmSchedule').innerHTML = amCards;
