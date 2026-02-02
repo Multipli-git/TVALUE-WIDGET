@@ -66,6 +66,15 @@
         border-radius: 12px;
         margin-top: 0.5rem;
       }
+      .am-schedule-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+      .am-schedule-column {
+        display: flex;
+        flex-direction: column;
+      }
     </style>
   </head>
   <body>
@@ -101,7 +110,7 @@
         <h4>📋 Cash Flow Schedule</h4>
         <div id="vCashflow"></div>
         <h4>🧾 Am Schedule</h4>
-        <div id="vAmSchedule"></div>
+        <div id="vAmSchedule" class="am-schedule-grid"></div>
       </div>
     </div>
 
@@ -192,28 +201,42 @@
         const filteredAmEntries = Array.isArray(amScheduleEntries)
           ? amScheduleEntries.filter((item) => !excludedLineTypes.has(item?.AmortizationLineType))
           : [];
-        const amCards = filteredAmEntries.length
-          ? filteredAmEntries.map((item, index) => {
-              const dataAmount = item?.Data?.PaymentAmount != null && item.Data.PaymentAmount !== 0
-                ? item.Data.PaymentAmount
-                : item?.Data?.LoanAmount != null && item.Data.LoanAmount !== 0
-                  ? item.Data.LoanAmount
-                  : item?.Data?.PrincipalPaid != null && item.Data.PrincipalPaid !== 0
-                    ? item.Data.PrincipalPaid
-                    : null;
-              const amount = item?.Amount != null
-                ? `$${(item.Amount / 100).toFixed(2)}`
-                : dataAmount != null
-                  ? `$${(dataAmount / 100).toFixed(2)}`
-                  : "N/A";
-              const date = item?.Date || item?.StartDate || "N/A";
-              const label = item?.Label || item?.Event || item?.AmortizationLineType || "Am Schedule Item";
-              const balance = item?.Data?.Balance != null
-                ? ` (Balance: $${(item.Data.Balance / 100).toFixed(2)})`
-                : "";
-              return `<div class='card'>#${index + 1} → ${label}: ${amount} on ${date}${balance}</div>`;
-            }).join("")
-          : "<div class='card'>No Am Schedule data available.</div>";
+        if (!filteredAmEntries.length) {
+          document.getElementById('vAmSchedule').innerHTML = "<div class='card'>No Am Schedule data available.</div>";
+          document.getElementById('parsed').style.display = 'block';
+          return;
+        }
+        const amColumns = [[]];
+        filteredAmEntries.forEach((item, index) => {
+          const dataAmount = item?.Data?.PaymentAmount != null && item.Data.PaymentAmount !== 0
+            ? item.Data.PaymentAmount
+            : item?.Data?.LoanAmount != null && item.Data.LoanAmount !== 0
+              ? item.Data.LoanAmount
+              : item?.Data?.PrincipalPaid != null && item.Data.PrincipalPaid !== 0
+                ? item.Data.PrincipalPaid
+                : null;
+          const amount = item?.Amount != null
+            ? `$${(item.Amount / 100).toFixed(2)}`
+            : dataAmount != null
+              ? `$${(dataAmount / 100).toFixed(2)}`
+              : "N/A";
+          const date = item?.Date || item?.StartDate || "N/A";
+          const label = item?.Label || item?.Event || item?.AmortizationLineType || "Am Schedule Item";
+          const balance = item?.Data?.Balance != null
+            ? ` (Balance: $${(item.Data.Balance / 100).toFixed(2)})`
+            : "";
+          const card = `<div class='card'>#${index + 1} → ${label}: ${amount} on ${date}${balance}</div>`;
+          amColumns[amColumns.length - 1].push(card);
+          if (item?.AmortizationLineType === "Annual Totals") {
+            amColumns.push([]);
+          }
+        });
+        if (!amColumns[amColumns.length - 1].length) {
+          amColumns.pop();
+        }
+        const amCards = amColumns.map((column) => (
+          `<div class='am-schedule-column'>${column.join("")}</div>`
+        )).join("");
         document.getElementById('vAmSchedule').innerHTML = amCards;
         document.getElementById('parsed').style.display = 'block';
       }
