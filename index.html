@@ -183,8 +183,17 @@
             amScheduleSource?.Lines ||
             amScheduleSource?.AmortizationTable ||
             [];
-        const amCards = Array.isArray(amScheduleEntries) && amScheduleEntries.length
-          ? amScheduleEntries.map((item, index) => {
+        const excludedLineTypes = new Set([
+          "Loan",
+          "Quarter Totals",
+          "Grand Totals",
+          "Rounding"
+        ]);
+        const filteredAmEntries = Array.isArray(amScheduleEntries)
+          ? amScheduleEntries.filter((item) => !excludedLineTypes.has(item?.AmortizationLineType))
+          : [];
+        const amCards = filteredAmEntries.length
+          ? filteredAmEntries.map((item, index) => {
               const dataAmount = item?.Data?.PaymentAmount != null && item.Data.PaymentAmount !== 0
                 ? item.Data.PaymentAmount
                 : item?.Data?.LoanAmount != null && item.Data.LoanAmount !== 0
