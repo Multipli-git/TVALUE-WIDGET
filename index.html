@@ -11,15 +11,15 @@
           Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         background-color: #f5f5f7;
         margin: 0;
-        padding: 2rem;
+        padding: 3rem;
       }
       .container {
-        max-width: 600px;
+        max-width: 1100px;
         margin: auto;
         background: white;
         border-radius: 16px;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        padding: 2rem;
+        padding: 2.5rem;
       }
       .form-group {
         margin-bottom: 1rem;
@@ -275,7 +275,9 @@
             </div>
           `;
         }).join("");
-        document.getElementById('vAmSchedule').innerHTML = amTables;
+        const amScheduleElement = document.getElementById('vAmSchedule');
+        amScheduleElement.style.gridTemplateColumns = `repeat(${columnCount}, minmax(240px, 1fr))`;
+        amScheduleElement.innerHTML = amTables;
         document.getElementById('parsed').style.display = 'block';
       }
 
