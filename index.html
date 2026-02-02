@@ -216,21 +216,26 @@
           "Loan",
           "Month Totals",
           "Quarter Totals",
+          "Annual Totals",
           "Grand Totals",
           "Rounding"
         ]);
         const filteredAmEntries = Array.isArray(amScheduleEntries)
           ? amScheduleEntries.filter((item) => !excludedLineTypes.has(item?.AmortizationLineType))
           : [];
-        if (!filteredAmEntries.length) {
+        const paymentEntries = filteredAmEntries.filter(
+          (item) => item?.AmortizationLineType === "Payment"
+        );
+        if (!paymentEntries.length) {
           document.getElementById('vAmSchedule').innerHTML = "<div class='card'>No Am Schedule data available.</div>";
           document.getElementById('parsed').style.display = 'block';
           return;
         }
         const columnCount = Math.max(1, Math.ceil(term / 12));
         const amColumns = Array.from({ length: columnCount }, () => []);
-        let columnIndex = 0;
-        filteredAmEntries.forEach((item, index) => {
+        const itemsPerColumn = Math.max(1, Math.ceil(term / columnCount));
+        paymentEntries.forEach((item, index) => {
+          const columnIndex = Math.min(Math.floor(index / itemsPerColumn), columnCount - 1);
           const dataAmount = item?.Data?.PaymentAmount != null && item.Data.PaymentAmount !== 0
             ? item.Data.PaymentAmount
             : item?.Data?.LoanAmount != null && item.Data.LoanAmount !== 0
@@ -250,9 +255,6 @@
             : "";
           const row = `<tr><td>#${index + 1}</td><td>${label}</td><td>${amount}</td><td>${date}</td><td>${balance || "-"}</td></tr>`;
           amColumns[columnIndex].push(row);
-          if (item?.AmortizationLineType === "Annual Totals" && columnIndex < columnCount - 1) {
-            columnIndex += 1;
-          }
         });
         const amTables = amColumns.map((rows) => {
           const body = rows.length ? rows.join("") : "<tr><td colspan='5'>No data</td></tr>";
