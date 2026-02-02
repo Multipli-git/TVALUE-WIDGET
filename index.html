@@ -126,7 +126,6 @@
       <div class="result-box" id="parsed" style="display:none">
         <h3>📊 TValue Results</h3>
         <p><strong>📈 Rate:</strong> <span id="vRate"></span></p>
-        <p><strong>💰 Commission:</strong> <span id="vCommission"></span></p>
         <h4>📋 Cash Flow Schedule</h4>
         <div id="vCashflow"></div>
         <h4>🧾 Am Schedule</h4>
@@ -184,7 +183,6 @@
         const commission = (json?.CFM?.Unknowns?.Value / 100).toFixed(2);
 
         document.getElementById('vRate').innerText = `${(json.CFM.Rate * 100).toFixed(2)}%`;
-        document.getElementById('vCommission').innerText = `$${commission}`;
 
         let cards = "";
         json.CFM.CFM.forEach((item, i) => {
@@ -195,6 +193,7 @@
           else if (i === 3) text = `#4 → Last Payment on: ${item.StartDate}`;
           cards += `<div class='card'>${text}</div>`;
         });
+        cards += `<div class='card'>#5 → Rate: ${(json.CFM.Rate * 100).toFixed(2)}%</div>`;
 
         document.getElementById('vCashflow').innerHTML = cards;
         const amScheduleSource = [
