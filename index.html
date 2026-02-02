@@ -100,6 +100,8 @@
         <p><strong>💰 Commission:</strong> <span id="vCommission"></span></p>
         <h4>📋 Cash Flow Schedule</h4>
         <div id="vCashflow"></div>
+        <h4>🧾 Am Schedule</h4>
+        <div id="vAmSchedule"></div>
       </div>
     </div>
 
@@ -123,7 +125,7 @@
 
         const payload = {
           CustomerId: "6774400739051474671",
-          CreateAmSchedule: false,
+          CreateAmSchedule: true,
           RoundingType: "SpecificLine",
           SpecificLine: 3,
           LineAdjustment: "LastAmount",
@@ -160,6 +162,16 @@
         });
 
         document.getElementById('vCashflow').innerHTML = cards;
+        const amSchedule = json?.AmSchedule || json?.CFM?.AmSchedule || [];
+        const amCards = Array.isArray(amSchedule) && amSchedule.length
+          ? amSchedule.map((item, index) => {
+              const amount = item?.Amount != null ? `$${(item.Amount / 100).toFixed(2)}` : "N/A";
+              const date = item?.Date || item?.StartDate || "N/A";
+              const label = item?.Label || item?.Event || "Am Schedule Item";
+              return `<div class='card'>#${index + 1} → ${label}: ${amount} on ${date}</div>`;
+            }).join("")
+          : "<div class='card'>No Am Schedule data available.</div>";
+        document.getElementById('vAmSchedule').innerHTML = amCards;
         document.getElementById('parsed').style.display = 'block';
       }
 
