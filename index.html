@@ -125,7 +125,6 @@
 
       <div class="result-box" id="parsed" style="display:none">
         <h3>📊 TValue Results</h3>
-        <p><strong>Rate:</strong> <span id="vRate"></span></p>
         <h4>📋 Cash Flow Schedule</h4>
         <div id="vCashflow"></div>
         <h4>🧾 Am Schedule</h4>
@@ -181,8 +180,6 @@
 
         const json = await res.json();
         const commission = (json?.CFM?.Unknowns?.Value / 100).toFixed(2);
-
-        document.getElementById('vRate').innerText = `${(json.CFM.Rate * 100).toFixed(2)}%`;
 
         let cards = "";
         json.CFM.CFM.forEach((item, i) => {
