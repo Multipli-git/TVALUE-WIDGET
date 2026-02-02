@@ -75,6 +75,26 @@
         display: flex;
         flex-direction: column;
       }
+      .am-schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #f1f1f3;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+      }
+      .am-schedule-table th,
+      .am-schedule-table td {
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        font-size: 0.9rem;
+      }
+      .am-schedule-table thead {
+        background: #e7e7ea;
+      }
+      .am-schedule-table tbody tr + tr {
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+      }
     </style>
   </head>
   <body>
@@ -194,6 +214,7 @@
             [];
         const excludedLineTypes = new Set([
           "Loan",
+          "Month Totals",
           "Quarter Totals",
           "Grand Totals",
           "Rounding"
@@ -206,7 +227,9 @@
           document.getElementById('parsed').style.display = 'block';
           return;
         }
-        const amColumns = [[]];
+        const columnCount = Math.max(1, Math.ceil(term / 12));
+        const amColumns = Array.from({ length: columnCount }, () => []);
+        let columnIndex = 0;
         filteredAmEntries.forEach((item, index) => {
           const dataAmount = item?.Data?.PaymentAmount != null && item.Data.PaymentAmount !== 0
             ? item.Data.PaymentAmount
@@ -223,21 +246,36 @@
           const date = item?.Date || item?.StartDate || "N/A";
           const label = item?.Label || item?.Event || item?.AmortizationLineType || "Am Schedule Item";
           const balance = item?.Data?.Balance != null
-            ? ` (Balance: $${(item.Data.Balance / 100).toFixed(2)})`
+            ? `$${(item.Data.Balance / 100).toFixed(2)}`
             : "";
-          const card = `<div class='card'>#${index + 1} → ${label}: ${amount} on ${date}${balance}</div>`;
-          amColumns[amColumns.length - 1].push(card);
-          if (item?.AmortizationLineType === "Annual Totals") {
-            amColumns.push([]);
+          const row = `<tr><td>#${index + 1}</td><td>${label}</td><td>${amount}</td><td>${date}</td><td>${balance || "-"}</td></tr>`;
+          amColumns[columnIndex].push(row);
+          if (item?.AmortizationLineType === "Annual Totals" && columnIndex < columnCount - 1) {
+            columnIndex += 1;
           }
         });
-        if (!amColumns[amColumns.length - 1].length) {
-          amColumns.pop();
-        }
-        const amCards = amColumns.map((column) => (
-          `<div class='am-schedule-column'>${column.join("")}</div>`
-        )).join("");
-        document.getElementById('vAmSchedule').innerHTML = amCards;
+        const amTables = amColumns.map((rows) => {
+          const body = rows.length ? rows.join("") : "<tr><td colspan='5'>No data</td></tr>";
+          return `
+            <div class='am-schedule-column'>
+              <table class='am-schedule-table'>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${body}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }).join("");
+        document.getElementById('vAmSchedule').innerHTML = amTables;
         document.getElementById('parsed').style.display = 'block';
       }
 
