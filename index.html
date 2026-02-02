@@ -126,6 +126,7 @@
         const payload = {
           CustomerId: "6774400739051474671",
           CreateAmSchedule: true,
+          CreateAMSchedule: true,
           RoundingType: "SpecificLine",
           SpecificLine: 3,
           LineAdjustment: "LastAmount",
@@ -162,9 +163,23 @@
         });
 
         document.getElementById('vCashflow').innerHTML = cards;
-        const amSchedule = json?.AmSchedule || json?.CFM?.AmSchedule || [];
-        const amCards = Array.isArray(amSchedule) && amSchedule.length
-          ? amSchedule.map((item, index) => {
+        const amScheduleSource = [
+          json?.AmSchedule,
+          json?.AMSchedule,
+          json?.AmortizationSchedule,
+          json?.CFM?.AmSchedule,
+          json?.CFM?.AMSchedule,
+          json?.CFM?.AmortizationSchedule
+        ].find(Boolean);
+        const amScheduleEntries = Array.isArray(amScheduleSource)
+          ? amScheduleSource
+          : amScheduleSource?.Schedule ||
+            amScheduleSource?.CFM ||
+            amScheduleSource?.Items ||
+            amScheduleSource?.Lines ||
+            [];
+        const amCards = Array.isArray(amScheduleEntries) && amScheduleEntries.length
+          ? amScheduleEntries.map((item, index) => {
               const amount = item?.Amount != null ? `$${(item.Amount / 100).toFixed(2)}` : "N/A";
               const date = item?.Date || item?.StartDate || "N/A";
               const label = item?.Label || item?.Event || "Am Schedule Item";
