@@ -11,15 +11,15 @@
           Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         background-color: #f5f5f7;
         margin: 0;
-        padding: 2rem;
+        padding: 3rem;
       }
       .container {
-        max-width: 600px;
+        max-width: 1100px;
         margin: auto;
         background: white;
         border-radius: 16px;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        padding: 2rem;
+        padding: 2.5rem;
       }
       .form-group {
         margin-bottom: 1rem;
@@ -66,6 +66,35 @@
         border-radius: 12px;
         margin-top: 0.5rem;
       }
+      .am-schedule-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+      .am-schedule-column {
+        display: flex;
+        flex-direction: column;
+      }
+      .am-schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #f1f1f3;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+      }
+      .am-schedule-table th,
+      .am-schedule-table td {
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        font-size: 0.9rem;
+      }
+      .am-schedule-table thead {
+        background: #e7e7ea;
+      }
+      .am-schedule-table tbody tr + tr {
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+      }
     </style>
   </head>
   <body>
@@ -81,7 +110,7 @@
       </div>
       <div class="form-group">
         <label>Term</label>
-        <input id="term" type="number" />
+        <input id="term" type="number" value="36" />
       </div>
       <div class="form-group">
         <label>Submitted for Payout</label>
@@ -89,21 +118,26 @@
       </div>
       <div class="form-group">
         <label>Rate</label>
-        <input id="rate" type="number" step="0.0001" />
+        <input id="rate" type="number" step="0.0001" value="9.25" />
       </div>
       <button onclick="calculateTValue()">Calculate</button>
       <button onclick="exportPDF()">Export PDF</button>
 
       <div class="result-box" id="parsed" style="display:none">
         <h3>📊 TValue Results</h3>
-        <p><strong>📈 Rate:</strong> <span id="vRate"></span></p>
-        <p><strong>💰 Commission:</strong> <span id="vCommission"></span></p>
         <h4>📋 Cash Flow Schedule</h4>
         <div id="vCashflow"></div>
+        <h4>🧾 Am Schedule</h4>
+        <div id="vAmSchedule" class="am-schedule-grid"></div>
       </div>
     </div>
 
     <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('startDate').value = today;
+      });
+
       async function calculateTValue() {
         const lease = parseFloat(document.getElementById('funding').value);
         const payment = parseFloat(document.getElementById('payment').value);
@@ -123,7 +157,8 @@
 
         const payload = {
           CustomerId: "6774400739051474671",
-          CreateAmSchedule: false,
+          CreateAmSchedule: true,
+          CreateAMSchedule: true,
           RoundingType: "SpecificLine",
           SpecificLine: 3,
           LineAdjustment: "LastAmount",
@@ -146,9 +181,6 @@
         const json = await res.json();
         const commission = (json?.CFM?.Unknowns?.Value / 100).toFixed(2);
 
-        document.getElementById('vRate').innerText = `${(json.CFM.Rate * 100).toFixed(2)}%`;
-        document.getElementById('vCommission').innerText = `$${commission}`;
-
         let cards = "";
         json.CFM.CFM.forEach((item, i) => {
           let text = "";
@@ -156,10 +188,101 @@
           else if (i === 1) text = `#2 → Commission: $${(item.Amount / 100).toFixed(2)} on ${item.StartDate}`;
           else if (i === 2) text = `#3 → Payment: $${(item.Amount / 100).toFixed(2)} on ${item.StartDate} (Monthly)`;
           else if (i === 3) text = `#4 → Last Payment on: ${item.StartDate}`;
-          cards += `<div class='card'>${text}</div>`;
+          if (text) {
+            cards += `<div class='card'>${text}</div>`;
+          }
         });
+        cards += `<div class='card'>#5 → Rate: ${(json.CFM.Rate * 100).toFixed(2)}%</div>`;
 
-        document.getElementById('vCashflow').innerHTML = cards;
+        document.getElementById('vCashflow').innerHTML = cards.trim();
+        const amScheduleSource = [
+          json?.AmortizationTable,
+          json?.AmSchedule,
+          json?.AMSchedule,
+          json?.AmortizationSchedule,
+          json?.Amortization?.AmortizationTable,
+          json?.CFM?.AmortizationTable,
+          json?.CFM?.AmSchedule,
+          json?.CFM?.AMSchedule,
+          json?.CFM?.AmortizationSchedule,
+          json?.CFM?.Amortization?.AmortizationTable
+        ].find(Boolean);
+        const amScheduleEntries = Array.isArray(amScheduleSource)
+          ? amScheduleSource
+          : amScheduleSource?.Schedule ||
+            amScheduleSource?.CFM ||
+            amScheduleSource?.Items ||
+            amScheduleSource?.Lines ||
+            amScheduleSource?.AmortizationTable ||
+            [];
+        const excludedLineTypes = new Set([
+          "Loan",
+          "Month Totals",
+          "Quarter Totals",
+          "Annual Totals",
+          "Grand Totals",
+          "Rounding"
+        ]);
+        const filteredAmEntries = Array.isArray(amScheduleEntries)
+          ? amScheduleEntries.filter((item) => !excludedLineTypes.has(item?.AmortizationLineType))
+          : [];
+        const paymentEntries = filteredAmEntries.filter(
+          (item) => item?.AmortizationLineType === "Payment"
+        );
+        if (!paymentEntries.length) {
+          document.getElementById('vAmSchedule').innerHTML = "<div class='card'>No Am Schedule data available.</div>";
+          document.getElementById('parsed').style.display = 'block';
+          return;
+        }
+        const columnCount = Math.max(1, Math.ceil(term / 12));
+        const amColumns = Array.from({ length: columnCount }, () => []);
+        const itemsPerColumn = Math.max(1, Math.ceil(term / columnCount));
+        paymentEntries.forEach((item, index) => {
+          const columnIndex = Math.min(Math.floor(index / itemsPerColumn), columnCount - 1);
+          const dataAmount = item?.Data?.PaymentAmount != null && item.Data.PaymentAmount !== 0
+            ? item.Data.PaymentAmount
+            : item?.Data?.LoanAmount != null && item.Data.LoanAmount !== 0
+              ? item.Data.LoanAmount
+              : item?.Data?.PrincipalPaid != null && item.Data.PrincipalPaid !== 0
+                ? item.Data.PrincipalPaid
+                : null;
+          const amount = item?.Amount != null
+            ? `$${(item.Amount / 100).toFixed(2)}`
+            : dataAmount != null
+              ? `$${(dataAmount / 100).toFixed(2)}`
+              : "N/A";
+          const date = item?.Date || item?.StartDate || "N/A";
+          const label = item?.Label || item?.Event || item?.AmortizationLineType || "Am Schedule Item";
+          const balance = item?.Data?.Balance != null
+            ? `$${(item.Data.Balance / 100).toFixed(2)}`
+            : "";
+          const row = `<tr><td>#${index + 1}</td><td>${label}</td><td>${amount}</td><td>${date}</td><td>${balance || "-"}</td></tr>`;
+          amColumns[columnIndex].push(row);
+        });
+        const amTables = amColumns.map((rows) => {
+          const body = rows.length ? rows.join("") : "<tr><td colspan='5'>No data</td></tr>";
+          return `
+            <div class='am-schedule-column'>
+              <table class='am-schedule-table'>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${body}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }).join("");
+        const amScheduleElement = document.getElementById('vAmSchedule');
+        amScheduleElement.style.gridTemplateColumns = `repeat(${columnCount}, minmax(240px, 1fr))`;
+        amScheduleElement.innerHTML = amTables;
         document.getElementById('parsed').style.display = 'block';
       }
 
