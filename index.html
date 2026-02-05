@@ -288,10 +288,44 @@
 
       function exportPDF() {
         import('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js').then(() => {
-          html2canvas(document.querySelector('#parsed')).then(canvas => {
+          const parsedEl = document.querySelector('#parsed');
+          if (!parsedEl || parsedEl.style.display === 'none') {
+            alert('Run Calculate before exporting to PDF.');
+            return;
+          }
+
+          const captureWidth = Math.ceil(parsedEl.scrollWidth);
+          const captureHeight = Math.ceil(parsedEl.scrollHeight);
+
+          html2canvas(parsedEl, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            windowWidth: captureWidth,
+            windowHeight: captureHeight
+          }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jspdf.jsPDF();
-            pdf.addImage(imgData, 'PNG', 10, 10);
+            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+
+            const margin = 10;
+            const usableWidth = pdfWidth - margin * 2;
+            const usableHeight = pdfHeight - margin * 2;
+
+            const imgWidth = usableWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let currentY = 0;
+
+            pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+            currentY += usableHeight;
+
+            while (currentY < imgHeight) {
+              pdf.addPage();
+              pdf.addImage(imgData, 'PNG', margin, margin - currentY, imgWidth, imgHeight);
+              currentY += usableHeight;
+            }
+
             pdf.save('tvalue_result.pdf');
           });
         });
