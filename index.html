@@ -332,11 +332,11 @@
             scrollY: 0
           }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            const pdf = new jspdf.jsPDF('l', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
 
-            const margin = 6;
+            const margin = 5;
             const usableWidth = pdfWidth - margin * 2;
             const usableHeight = pdfHeight - margin * 2;
 
