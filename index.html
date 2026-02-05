@@ -317,6 +317,17 @@
             return;
           }
 
+          const scheduleEl = document.getElementById('vAmSchedule');
+          const originalParsedWidth = parsedEl.style.width;
+          const originalScheduleOverflow = scheduleEl?.style.overflowX || '';
+          const originalScheduleMaxWidth = scheduleEl?.style.maxWidth || '';
+
+          if (scheduleEl) {
+            scheduleEl.style.overflowX = 'visible';
+            scheduleEl.style.maxWidth = 'none';
+          }
+          parsedEl.style.width = `${Math.ceil(parsedEl.scrollWidth)}px`;
+
           const captureWidth = Math.ceil(parsedEl.scrollWidth);
           const captureHeight = Math.ceil(parsedEl.scrollHeight);
 
@@ -330,8 +341,7 @@
             windowHeight: captureHeight,
             scrollX: 0,
             scrollY: 0
-          }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
+          }).then((canvas) => {
             const pdf = new jspdf.jsPDF('l', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -340,20 +350,49 @@
             const usableWidth = pdfWidth - margin * 2;
             const usableHeight = pdfHeight - margin * 2;
 
-            const imgWidth = usableWidth;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            let currentY = 0;
+            const pxPerMm = canvas.width / usableWidth;
+            const pageHeightPx = Math.max(1, Math.floor(usableHeight * pxPerMm));
 
-            pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
-            currentY += usableHeight;
+            let offsetY = 0;
+            let pageIndex = 0;
 
-            while (currentY < imgHeight) {
-              pdf.addPage();
-              pdf.addImage(imgData, 'PNG', margin, margin - currentY, imgWidth, imgHeight);
-              currentY += usableHeight;
+            while (offsetY < canvas.height) {
+              const sliceHeightPx = Math.min(pageHeightPx, canvas.height - offsetY);
+              const pageCanvas = document.createElement('canvas');
+              pageCanvas.width = canvas.width;
+              pageCanvas.height = sliceHeightPx;
+              const pageCtx = pageCanvas.getContext('2d');
+              pageCtx.drawImage(
+                canvas,
+                0,
+                offsetY,
+                canvas.width,
+                sliceHeightPx,
+                0,
+                0,
+                canvas.width,
+                sliceHeightPx
+              );
+
+              const pageImageData = pageCanvas.toDataURL('image/png');
+              const renderHeightMm = sliceHeightPx / pxPerMm;
+
+              if (pageIndex > 0) {
+                pdf.addPage();
+              }
+              pdf.addImage(pageImageData, 'PNG', margin, margin, usableWidth, renderHeightMm);
+
+              offsetY += sliceHeightPx;
+              pageIndex += 1;
             }
 
             pdf.save('tvalue_result.pdf');
+          }).finally(() => {
+            parsedEl.style.width = originalParsedWidth;
+            if (scheduleEl) {
+              scheduleEl.style.overflowX = originalScheduleOverflow;
+              scheduleEl.style.maxWidth = originalScheduleMaxWidth;
+            }
           });
         });
       }
