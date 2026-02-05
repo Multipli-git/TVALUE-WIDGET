@@ -301,29 +301,43 @@
             scale: 2,
             useCORS: true,
             backgroundColor: '#ffffff',
+            width: captureWidth,
+            height: captureHeight,
             windowWidth: captureWidth,
-            windowHeight: captureHeight
+            windowHeight: captureHeight,
+            scrollX: 0,
+            scrollY: 0
           }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            const orientation = canvas.width > canvas.height ? 'l' : 'p';
+            const pdf = new jspdf.jsPDF(orientation, 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
 
-            const margin = 10;
+            const margin = 8;
             const usableWidth = pdfWidth - margin * 2;
             const usableHeight = pdfHeight - margin * 2;
 
-            const imgWidth = usableWidth;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            let currentY = 0;
+            const pxToMm = 25.4 / 96;
+            const imgWidth = canvas.width * pxToMm;
+            const imgHeight = canvas.height * pxToMm;
 
-            pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
-            currentY += usableHeight;
-
-            while (currentY < imgHeight) {
-              pdf.addPage();
-              pdf.addImage(imgData, 'PNG', margin, margin - currentY, imgWidth, imgHeight);
-              currentY += usableHeight;
+            let pageIndex = 0;
+            for (let offsetX = 0; offsetX < imgWidth; offsetX += usableWidth) {
+              for (let offsetY = 0; offsetY < imgHeight; offsetY += usableHeight) {
+                if (pageIndex > 0) {
+                  pdf.addPage();
+                }
+                pdf.addImage(
+                  imgData,
+                  'PNG',
+                  margin - offsetX,
+                  margin - offsetY,
+                  imgWidth,
+                  imgHeight
+                );
+                pageIndex += 1;
+              }
             }
 
             pdf.save('tvalue_result.pdf');
