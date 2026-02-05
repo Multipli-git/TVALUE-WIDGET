@@ -14,7 +14,7 @@
         padding: 3rem;
       }
       .container {
-        max-width: 1320px;
+        max-width: 1240px;
         margin: auto;
         background: white;
         border-radius: 16px;
@@ -70,11 +70,14 @@
         display: grid;
         gap: 1rem;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        max-width: 100%;
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
       }
       .am-schedule-column {
         display: flex;
         flex-direction: column;
-        min-width: 380px;
+        min-width: 340px;
       }
       .am-schedule-table {
         width: 100%;
@@ -107,7 +110,7 @@
       }
       .am-schedule-table th:nth-child(4),
       .am-schedule-table td:nth-child(4) {
-        min-width: 116px;
+        min-width: 104px;
       }
       .am-schedule-table thead {
         background: #e7e7ea;
@@ -301,7 +304,7 @@
           `;
         }).join("");
         const amScheduleElement = document.getElementById('vAmSchedule');
-        amScheduleElement.style.gridTemplateColumns = `repeat(${columnCount}, minmax(380px, 1fr))`;
+        amScheduleElement.style.gridTemplateColumns = `repeat(${columnCount}, minmax(340px, 1fr))`;
         amScheduleElement.innerHTML = amTables;
         document.getElementById('parsed').style.display = 'block';
       }
