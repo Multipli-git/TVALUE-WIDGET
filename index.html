@@ -291,10 +291,26 @@
       function exportPDF() {
         import('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js').then(() => {
           const parsed = document.querySelector('#parsed');
-          html2canvas(parsed, {
+          const exportWrapper = document.createElement('div');
+          exportWrapper.style.position = 'fixed';
+          exportWrapper.style.left = '-10000px';
+          exportWrapper.style.top = '0';
+          exportWrapper.style.pointerEvents = 'none';
+
+          const exportNode = parsed.cloneNode(true);
+          exportNode.style.display = 'block';
+          exportNode.style.width = `${parsed.scrollWidth}px`;
+          exportNode.style.overflow = 'visible';
+
+          exportWrapper.appendChild(exportNode);
+          document.body.appendChild(exportWrapper);
+
+          html2canvas(exportNode, {
             backgroundColor: '#ffffff',
             scale: 2,
             useCORS: true,
+            width: parsed.scrollWidth,
+            height: parsed.scrollHeight,
             windowWidth: parsed.scrollWidth,
             windowHeight: parsed.scrollHeight
           }).then((canvas) => {
@@ -348,6 +364,9 @@
             }
 
             pdf.save('tvalue_result.pdf');
+            document.body.removeChild(exportWrapper);
+          }).catch(() => {
+            document.body.removeChild(exportWrapper);
           });
         });
       }
